@@ -1,4 +1,4 @@
-const CACHE='score-history-v1';
+const CACHE='score-history-v2';
 const FILES=['./','index.html','icon192.png','icon512.png','manifest.json'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));
