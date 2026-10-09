@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>골프 스코어 히스토리</title>
+<link rel="icon" type="image/png" href="icon192.png">
+<link rel="apple-touch-icon" href="icon192.png">
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Malgun Gothic',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;padding:14px;max-width:600px;margin:0 auto}
+h1{font-size:24px;text-align:center;margin:10px 0 4px}
+.sub{text-align:center;color:#888;font-size:13px;margin-bottom:14px}
+.stats{display:flex;gap:8px;margin-bottom:14px}
+.stat{flex:1;background:#16213e;border-radius:14px;padding:14px 8px;text-align:center;border:1px solid #2a2a4e}
+.stat .lbl{font-size:11px;color:#888}
+.stat .val{font-size:26px;font-weight:800;color:#a5d6a7;margin-top:4px}
+.chart-card{background:#16213e;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #2a2a4e}
+.chart-card h2{font-size:14px;color:#888;margin-bottom:10px}
+#chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bar{width:100%;max-width:36px;background:linear-gradient(to top,#2d5a2d,#66bb6a);border-radius:4px 4px 0 0;min-height:4px}
+.bar.best{background:linear-gradient(to top,#b8860b,#ffd54f)}
+.bar-lbl{font-size:10px;color:#888;margin-top:4px}
+.bar-val{font-size:11px;font-weight:700;color:#a5d6a7}
+.form{background:#16213e;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #2a2a4e}
+.form h2{font-size:16px;margin-bottom:12px;color:#a5d6a7}
+.row{display:flex;gap:8px;margin-bottom:10px}
+.row .fld{flex:1}
+label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+input{width:100%;font-size:18px;padding:12px;border-radius:10px;border:1px solid #2a2a4e;background:#0f0f23;color:#fff}
+#add-btn{width:100%;padding:16px;font-size:18px;font-weight:800;border:none;border-radius:12px;background:#2d5a2d;color:#fff;cursor:pointer;margin-top:4px}
+#add-btn:active{background:#1e401e}
+#cancel-btn{width:100%;padding:12px;font-size:15px;font-weight:700;border:1px solid #2a2a4e;border-radius:12px;background:transparent;color:#888;cursor:pointer;margin-top:8px;display:none}
+#form-err{display:none;background:#5a1e1e;color:#ffb3b3;font-size:14px;padding:10px 14px;border-radius:10px;margin-bottom:10px;text-align:center}
+#form-ok{display:none;background:#1e4a1e;color:#a5d6a7;font-size:14px;padding:10px 14px;border-radius:10px;margin-bottom:10px;text-align:center}
+.list h2{font-size:16px;margin:6px 0 10px;color:#a5d6a7}
+.rec{background:#16213e;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #2a2a4e;display:flex;align-items:center;gap:10px}
+.rec .info{flex:1}
+.rec .date{font-size:13px;color:#888}
+.rec .course{font-size:15px;font-weight:700;margin-top:2px}
+.rec .vspar{font-size:12px;margin-top:2px}
+.rec .score{font-size:30px;font-weight:800;color:#a5d6a7;min-width:60px;text-align:right}
+.rec .btns{display:flex;flex-direction:column;gap:4px}
+.rec .btns button{background:none;border:1px solid #2a2a4e;color:#888;font-size:13px;border-radius:8px;padding:6px 10px;cursor:pointer}
+.rec .btns button.del{color:#ff6b6b;border-color:#5a1e1e}
+.rec .btns button.del.confirm{background:#5a1e1e;color:#fff}
+.empty{text-align:center;color:#666;padding:30px;font-size:14px}
+.over{color:#ff8a80}.under{color:#69f0ae}.even{color:#a5d6a7}
+</style>
+</head>
+<body>
+<h1>⛳ 스코어 히스토리</h1>
+<div class="sub">라운드별 점수를 기록하고 추이를 보자</div>
+
+<div class="stats">
+<div class="stat"><div class="lbl">라운드</div><div class="val" id="st-rounds">–</div></div>
+<div class="stat"><div class="lbl">평균</div><div class="val" id="st-avg">–</div></div>
+<div class="stat"><div class="lbl">베스트</div><div class="val" id="st-best">–</div></div>
+</div>
+
+<div class="chart-card">
+<h2>최근 10라운드 추이</h2>
+<div id="chart"></div>
+</div>
+
+<div class="form">
+<h2 id="form-title">라운드 기록 추가</h2>
+<div id="form-err"></div>
+<div id="form-ok"></div>
+<div class="row">
+<div class="fld"><label>날짜</label><input type="date" id="f-date"></div>
+<div class="fld"><label>파</label><input type="number" id="f-par" inputmode="numeric" placeholder="72"></div>
+</div>
+<div class="row">
+<div class="fld"><label>골프장</label><input type="text" id="f-course" placeholder="예: Pelham Hills"></div>
+</div>
+<div class="row">
+<div class="fld"><label>스코어</label><input type="number" id="f-score" inputmode="numeric" placeholder="예: 95"></div>
+</div>
+<button id="add-btn" onclick="saveRecord()">기록 추가</button>
+<button id="cancel-btn" onclick="cancelEdit()">취소</button>
+</div>
+
+<div class="list">
+<h2>기록</h2>
+<div id="records"></div>
+</div>
+
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}
+const LS_KEY="golf-score-history-v1";
+let records=load();
+let editId=null;
+let pendingDel=null;
+
+function load(){try{const s=localStorage.getItem(LS_KEY);if(s)return JSON.parse(s);}catch(e){}return [];}
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(records));}catch(e){}}
+
+document.getElementById("f-date").value=new Date().toISOString().slice(0,10);
+
+function showErr(m){const e=document.getElementById("form-err");e.textContent=m;e.style.display="block";clearTimeout(showErr.t);showErr.t=setTimeout(()=>e.style.display="none",2500);}
+function showOk(m){const e=document.getElementById("form-ok");e.textContent=m;e.style.display="block";clearTimeout(showOk.t);showOk.t=setTimeout(()=>e.style.display="none",2500);}
+
+function vsParClass(s,p){if(!p)return"";if(s<p)return"under";if(s>p)return"over";return"even";}
+function vsParText(s,p){if(!p)return"";const d=s-p;if(d===0)return"E";return(d>0?"+":"")+d;}
+
+function saveRecord(){
+const date=document.getElementById("f-date").value;
+const course=document.getElementById("f-course").value.trim();
+const score=parseInt(document.getElementById("f-score").value,10);
+const par=parseInt(document.getElementById("f-par").value,10)||null;
+if(!date||!course||!score||score<=0||score>200){showErr("날짜, 골프장, 스코어를 입력해줘");return;}
+if(editId){
+const r=records.find(x=>x.id===editId);
+if(r){r.date=date;r.course=course;r.score=score;r.par=par;}
+showOk("수정됐어");
+}else{
+records.push({id:"r"+Date.now(),date,course,score,par});
+showOk("기록됐어");
+}
+save();cancelEdit();render();
+}
+
+function startEdit(id){
+const r=records.find(x=>x.id===id);
+if(!r)return;
+editId=id;
+document.getElementById("f-date").value=r.date;
+document.getElementById("f-course").value=r.course;
+document.getElementById("f-score").value=r.score;
+document.getElementById("f-par").value=r.par||"";
+document.getElementById("form-title").textContent="라운드 수정";
+document.getElementById("add-btn").textContent="저장";
+document.getElementById("cancel-btn").style.display="block";
+window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function cancelEdit(){
+editId=null;
+document.getElementById("f-date").value=new Date().toISOString().slice(0,10);
+document.getElementById("f-course").value="";
+document.getElementById("f-score").value="";
+document.getElementById("f-par").value="";
+document.getElementById("form-title").textContent="라운드 기록 추가";
+document.getElementById("add-btn").textContent="기록 추가";
+document.getElementById("cancel-btn").style.display="none";
+}
+
+function delRecord(id,btn){
+if(pendingDel!==id){
+pendingDel=id;
+btn.textContent="확인?";
+btn.classList.add("confirm");
+clearTimeout(delRecord.t);
+delRecord.t=setTimeout(()=>{pendingDel=null;render();},2500);
+return;
+}
+pendingDel=null;
+if(editId===id)cancelEdit();
+records=records.filter(r=>r.id!==id);
+save();render();
+}
+
+function render(){
+// 통계
+const n=records.length;
+document.getElementById("st-rounds").textContent=n||"–";
+if(n){
+const scores=records.map(r=>r.score);
+const avg=scores.reduce((a,b)=>a+b,0)/n;
+const best=Math.min(...scores);
+document.getElementById("st-avg").textContent=avg.toFixed(1);
+document.getElementById("st-best").textContent=best;
+}else{
+document.getElementById("st-avg").textContent="–";
+document.getElementById("st-best").textContent="–";
+}
+
+// 차트 (최근 10개, 오래된 순)
+const chart=document.getElementById("chart");
+const recent=[...records].sort((a,b)=>a.date<b.date?-1:1).slice(-10);
+if(!recent.length){chart.innerHTML='<div class="empty" style="width:100%">기록을 추가하면 그래프가 나와</div>';}
+else{
+const scores=recent.map(r=>r.score);
+const mn=Math.min(...scores),mx=Math.max(...scores);
+const range=(mx-mn)||1;
+const best=Math.min(...scores);
+chart.innerHTML=recent.map(r=>{
+const h=15+((mx-r.score)/range)*75;
+const cls=r.score===best?"bar best":"bar";
+const d=r.date.slice(5).replace("-","/");
+return `<div class="bar-wrap"><div class="bar-val">${r.score}</div><div class="${cls}" style="height:${h}px"></div><div class="bar-lbl">${d}</div></div>`;
+}).join("");
+}
+
+// 목록 (최신순)
+const list=document.getElementById("records");
+if(!n){list.innerHTML='<div class="empty">아직 기록이 없어</div>';return;}
+const sorted=[...records].sort((a,b)=>a.date<b.date?1:-1);
+list.innerHTML=sorted.map(r=>{
+const cls=vsParClass(r.score,r.par);
+const vst=vsParText(r.score,r.par);
+return `<div class="rec"><div class="info"><div class="date">${r.date}</div><div class="course">${r.course}</div>${r.par?`<div class="vspar ${cls}">파 ${r.par} · ${vst}</div>`:""}</div><div class="score">${r.score}</div><div class="btns"><button onclick="startEdit('${r.id}')">수정</button><button class="del" onclick="delRecord('${r.id}',this)">삭제</button></div></div>`;
+}).join("");
+}
+render();
+</script>
+</body>
+</html>
