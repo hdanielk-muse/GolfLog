@@ -48,6 +48,7 @@ input{width:100%;font-size:18px;padding:12px;border-radius:10px;border:1px solid
 .rec .btns button.del.confirm{background:#5a1e1e;color:#fff}
 .empty{text-align:center;color:#666;padding:30px;font-size:14px}
 .over{color:#ff8a80}.under{color:#69f0ae}.even{color:#a5d6a7}
+#export-btn{width:100%;padding:14px;font-size:16px;font-weight:700;border:1px solid #2a2a4e;border-radius:12px;background:#0f0f23;color:#a5d6a7;cursor:pointer;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -85,6 +86,7 @@ input{width:100%;font-size:18px;padding:12px;border-radius:10px;border:1px solid
 
 <div class="list">
 <h2>기록</h2>
+<button id="export-btn" onclick="exportCSV()">📥 엑셀(CSV)로 내보내기</button>
 <div id="records"></div>
 </div>
 
@@ -161,6 +163,26 @@ pendingDel=null;
 if(editId===id)cancelEdit();
 records=records.filter(r=>r.id!==id);
 save();render();
+}
+
+function exportCSV(){
+if(!records.length){showErr("내보낼 기록이 없어");return;}
+const sorted=[...records].sort((a,b)=>a.date<b.date?-1:1);
+const rows=["날짜,골프장,파,스코어,vs파"];
+sorted.forEach(r=>{
+const vst=r.par?vsParText(r.score,r.par):"";
+const course='"'+r.course.replace(/"/g,'""')+'"';
+rows.push([r.date,course,r.par||"",r.score,vst].join(","));
+});
+const csv="\uFEFF"+rows.join("\n");
+const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+const a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="golf-score-history.csv";
+document.body.appendChild(a);a.click();
+document.body.removeChild(a);
+setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+showOk("다운로드됐어. 엑셀로 열면 돼");
 }
 
 function render(){
